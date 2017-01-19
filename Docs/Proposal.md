@@ -4,7 +4,7 @@ Joseph Olin
 Michael Roark  
 Branden Wagner  
 
-Idea Guidelines:
+Proposal Idea Guidelines:
 * Swarm Robotics
 * MUST be intelligent/dynamic robot
 * Simplest deliverable
