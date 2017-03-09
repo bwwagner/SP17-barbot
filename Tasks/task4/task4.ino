@@ -18,12 +18,12 @@ boolean found2;
 void setup(){
   Serial.begin(9600);
   AFMS.begin();
-  pinMode(0,OUTPUT); //gas Left
-  pinMode(1,OUTPUT); //gas Mid
-  pinMode(2,OUTPUT); //gas Right
-  pinMode(led,OUTPUT);
-  pinMode(green,OUTPUT);
-  pinMode(red,OUTPUT);
+//  pinMode(0,OUTPUT); //gas Left
+//  pinMode(1,OUTPUT); //gas Mid
+//  pinMode(2,OUTPUT); //gas Right
+//  pinMode(led,OUTPUT);
+//  pinMode(green,OUTPUT);
+//  pinMode(red,OUTPUT);
   pinMode(10,OUTPUT); //IR left 
   pinMode(11,OUTPUT);
   pinMode(12,OUTPUT);
@@ -132,8 +132,13 @@ void lite(){
     M3->setSpeed(255*left);
     M4->setSpeed(255*right);
 
-void loop(){
+}    
 
+void loop(){
+//    M1->setSpeed(60);  // 10 rpm   
+//    M2->setSpeed(60);
+//    M3->setSpeed(60);
+//    M4->setSpeed(60);
   lite();
   M1->run(FORWARD);
   M2->run(FORWARD);
