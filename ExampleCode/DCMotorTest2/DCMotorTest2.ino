@@ -45,7 +45,7 @@ Servo gripper;
 #define rMap 250
 #define gMap 300//420
 #define bMap 300//350
-#define NUM_SUPPORTED_COLORS 3
+#define NUM_SUPPORTED_COLORS 4
 
 int frequency = 0;
 long gCounter = 0;
@@ -83,6 +83,7 @@ void setup() {
   color green = color(110, 170, 90, "GREEN");
   color red = color(220, 30, 60, "RED");
   color blue = color(80, 150, 185, "BLUE");
+  color table = color(200, 190, 180, "TABLE");
   colorList[0] = green;
   colorList[1] = red;
   colorList[2] = blue;
@@ -114,7 +115,7 @@ void setup() {
 //  myMotor->run(RELEASE);
 }
 
-String mapColor(int r, int g, int b){
+int mapColor(int r, int g, int b){
   String color;
 //  if(r > 200 && g < 100 && b < 100){
 //    color = "RED";
@@ -122,7 +123,7 @@ String mapColor(int r, int g, int b){
 //  if(r > 100 && r < 125 && g > 150 && g < 180 && b > 80 && b < 110){
 //    color = "GREEN";
 //  }
-  String closestColor;
+  int closestColor;
   double minDiff = 1000000000;
   for(int i = 0; i < NUM_SUPPORTED_COLORS; i++){
     int red = colorList[i].r;
@@ -134,7 +135,7 @@ String mapColor(int r, int g, int b){
     double diff = sqrt(redDiff + greenDiff + blueDiff);
     if(diff < minDiff){
       minDiff = diff;
-      closestColor = colorList[i].nam;
+      closestColor = i;
     }
   }
   return closestColor;
@@ -207,34 +208,43 @@ void loop() {
   gCounter++;
   bCounter++;
   rCounter++;
-
-  if(gCounter == 10){
-    Serial.print("Ravg = ");
-    Serial.print((rAcc/rCounter));
-    Serial.print(" max=");
-    Serial.print(rMax);
-    Serial.print(" min=");
-    Serial.println(rMin);
-    Serial.println(redrgb);
-
-     Serial.print("Gavg = ");
-    Serial.print((gAcc/gCounter));
-    Serial.print(" max=");
-    Serial.print(gMax);
-    Serial.print(" min=");
-    Serial.println(gMin);
-    Serial.println(greenrgb);
-
-
-    Serial.print("Bavg = ");
-    Serial.print((bAcc/bCounter));
-    Serial.print(" max=");
-    Serial.print(bMax);
-    Serial.print(" min=");
-    Serial.println(bMin);
-    Serial.println(bluergb);
-    Serial.println(mapColor(redrgb, greenrgb, bluergb));
+  int colorNum = mapColor(redrgb, greenrgb, bluergb);
+  if(colorNum == 0){//if red color
+    
+  }else if(colorNum == 1){//if green color
+    
+  }else if(colorNum == 2){//if blue color
+    
+  } else {//if table color
+    
   }
+//  if(gCounter == 10){
+//    Serial.print("Ravg = ");
+//    Serial.print((rAcc/rCounter));
+//    Serial.print(" max=");
+//    Serial.print(rMax);
+//    Serial.print(" min=");
+//    Serial.println(rMin);
+//    Serial.println(redrgb);
+//
+//     Serial.print("Gavg = ");
+//    Serial.print((gAcc/gCounter));
+//    Serial.print(" max=");
+//    Serial.print(gMax);
+//    Serial.print(" min=");
+//    Serial.println(gMin);
+//    Serial.println(greenrgb);
+//
+//
+//    Serial.print("Bavg = ");
+//    Serial.print((bAcc/bCounter));
+//    Serial.print(" max=");
+//    Serial.print(bMax);
+//    Serial.print(" min=");
+//    Serial.println(bMin);
+//    Serial.println(bluergb);
+//    Serial.println(mapColor(redrgb, greenrgb, bluergb));
+//  }
 
 //  myMotor1->run(FORWARD);
 //  myMotor2->run(FORWARD);
