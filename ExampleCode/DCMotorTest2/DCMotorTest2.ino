@@ -84,9 +84,10 @@ void setup() {
   color red = color(220, 30, 60, "RED");
   color blue = color(80, 150, 185, "BLUE");
   color table = color(200, 190, 180, "TABLE");
-  colorList[0] = green;
-  colorList[1] = red;
+  colorList[0] = red;
+  colorList[1] = green;
   colorList[2] = blue;
+  colorList[3] = table;
 
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -102,13 +103,13 @@ void setup() {
 
   Braccio.begin();
 
-  //AFMS.begin(1000);  // OR with a different frequency, say 1KHz
+  AFMS.begin(1000);  // OR with a different frequency, say 1KHz
   
   // Set the speed to start, from 0 (off) to 255 (max speed)
-  myMotor1->setSpeed(150);  
-  myMotor2->setSpeed(150);
-  myMotor3->setSpeed(150);
-  myMotor4->setSpeed(150);
+  myMotor1->setSpeed(60);  
+  myMotor2->setSpeed(60);
+  myMotor3->setSpeed(60);
+  myMotor4->setSpeed(60);
 
 //  myMotor->run(FORWARD);
   // turn on motor
@@ -123,7 +124,7 @@ int mapColor(int r, int g, int b){
 //  if(r > 100 && r < 125 && g > 150 && g < 180 && b > 80 && b < 110){
 //    color = "GREEN";
 //  }
-  int closestColor;
+  int closestColor = 4;
   double minDiff = 1000000000;
   for(int i = 0; i < NUM_SUPPORTED_COLORS; i++){
     int red = colorList[i].r;
@@ -209,14 +210,56 @@ void loop() {
   bCounter++;
   rCounter++;
   int colorNum = mapColor(redrgb, greenrgb, bluergb);
+  Serial.println(colorList[colorNum].nam);
   if(colorNum == 0){//if red color
-    
+    myMotor1->run(FORWARD);
+    myMotor2->run(FORWARD);
+    myMotor3->run(FORWARD);
+    myMotor4->run(FORWARD);
   }else if(colorNum == 1){//if green color
-    
-  }else if(colorNum == 2){//if blue color
+    delay(500);
+    myMotor1->setSpeed(0);  
+    myMotor2->setSpeed(0);
+    myMotor3->setSpeed(0);
+    myMotor4->setSpeed(0);
+
+    //Starting position
+                      //(step delay  M1 , M2 , M3 , M4 , M5 , M6);
+    Braccio.ServoMovement(20,           87,  45, 180, 180,  90,  10);
+  
+    //Wait 1 second
+    delay(1000);
+
+    //The braccio moves to the sponge. Only the M2 servo will moves
+    Braccio.ServoMovement(20,           87,  100, 153, 180,  90,   10);
+
+    //Close the gripper to take the sponge. Only the M6 servo will moves
+    Braccio.ServoMovement(10,           87,  100, 153, 180,  90,  70 );
+
+    //Brings the sponge upwards.
+    Braccio.ServoMovement(20,         87,   45, 180,  45,  0, 73);
+
+    //Show the sponge. Only the M1 servo will moves
+    Braccio.ServoMovement(20,         180,  45, 180,   45,   0,  73);
+
+    //Return to the start position.
+    Braccio.ServoMovement(20,         180,   120, 145,  180,  90, 73);
+
+    //Open the gripper
+    Braccio.ServoMovement(20,         180,   140, 145,  180,  90, 10 );
+    Braccio.ServoMovement(20,         180,   100, 145,  180,  90, 10 );
+    delay(100000);
+   }else if(colorNum == 2){//if blue color
     
   } else {//if table color
-    
+      myMotor1->run(FORWARD);
+      myMotor2->run(FORWARD);
+      myMotor3->run(FORWARD);
+      myMotor4->run(FORWARD);
+      myMotor1->setSpeed(60);  
+      myMotor2->setSpeed(60);
+      myMotor3->setSpeed(60);
+      myMotor4->setSpeed(60);
   }
 //  if(gCounter == 10){
 //    Serial.print("Ravg = ");
