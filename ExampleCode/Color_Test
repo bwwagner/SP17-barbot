@@ -1,0 +1,119 @@
+/*     Arduino Color Sensing Tutorial
+ *      
+ *  by Dejan Nedelkovski, www.HowToMechatronics.com
+ *  
+ */
+
+//CONSTANTS
+//PINS
+#define S0 31
+#define S1 33
+#define S2 35
+#define S3 37
+#define sensorOut 39
+
+//COLOR MAPPING
+#define R_MAP_LOW 7
+#define G_MAP_LOW 13
+#define B_MAP_LOW 9
+
+#define R_MAP_HIGH 37
+#define G_MAP_HIGH 58
+#define B_MAP_HIGH 50
+
+
+/*
+ * DATA:
+ * =========================================================================================================================================================
+ * |    R    |    G    |    B    | ERROR |                                                   DESC                                                          |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |  10-16  |  50-58  |  42-50  |   8   | Raw readings on Red paper, 20% Frequency scaling.                                                               |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |  36-37  |  25-32  |  44-45  |   7   | Raw readings on green paper, 20% Frequency scaling.                                                             |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |  25-31  |  36-42  |  43-44  |   6   | Raw readings on black electrical tape, 20% Frequency scaling.                                                   |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |   7-11  |  13-14  |   9-13  |   4   | Raw readings on back of coloured paper (white), 20% Frequency scaling.                                          |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |    9    |    22   |  25-32  |   7   | Raw readings on Orange post-it note, 20% Frequency scaling.                                                     |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |  12-13  |  10-15  |  27-28  |   5   | Raw readings on yellow-ish green post-it note, 20% Frequency scaling.                                           |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |   8-9   |  29-35  |   22    |   6   | Raw readings on pinkish post-it note, 20% frequency scaling.                                                    |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |   0-2   |   0-2   |   0-2   |   2   | Raw readings where I shone a light into the sensor, 20% frequency scaling.                                      |
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ * |  11-19  |  17-24  | 17- 24  |   8   | Raw readings of the table we are using, 20% frequency scaling. Took samples from several locations on the table.|
+ * ---------------------------------------------------------------------------------------------------------------------------------------------------------
+ */
+
+//GLOBALS
+int frequency = 0;
+bool displayingFreq = true;
+
+void setup() {
+  Serial.println("Beggining setup...");
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(sensorOut, INPUT);
+  
+  // Setting frequency-scaling to 20%
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,HIGH);
+  
+  Serial.begin(9600);
+}
+void loop() {
+
+  //------------------------------------------------- RED -------------------------------------------
+  // Setting red filtered photodiodes to be read
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,LOW);
+  // Reading the output frequency
+  frequency = pulseIn(sensorOut, LOW);
+  //Map and print
+  if (displayingFreq) {
+    Serial.print ("RF : ");
+    Serial.println(frequency);
+  }
+  long redrgb = map(frequency, R_MAP_LOW,R_MAP_HIGH,255,0);
+
+  // ----------------------------------------------- GREEN -------------------------------------------
+  // Setting Green filtered photodiodes to be read
+  digitalWrite(S2,HIGH);
+  digitalWrite(S3,HIGH);
+  // Reading the output frequency
+  frequency = pulseIn(sensorOut, LOW);
+  //Map and print
+  if (displayingFreq) {
+    Serial.print ("GF : ");
+    Serial.println(frequency);
+  }
+  long greenrgb = map(frequency, G_MAP_LOW,G_MAP_HIGH,255,0);
+  
+
+  // ------------------------------------------------ BLUE -------------------------------------------
+  // Setting Blue filtered photodiodes to be read
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,HIGH);
+  // Reading the output frequency
+  frequency = pulseIn(sensorOut, LOW);
+  //Map and print.
+  if (displayingFreq) {
+    Serial.print ("BF : ");
+    Serial.println(frequency);
+  }
+  long bluergb = map(frequency, B_MAP_LOW,B_MAP_HIGH,255,0);
+  
+  //PRINT
+  Serial.print("RGB Values: ");
+  Serial.print(redrgb);
+  Serial.print(", ");
+  Serial.print(greenrgb);
+  Serial.print(", ");
+  Serial.println(bluergb);
+
+  delay(1000);
+}
