@@ -4,6 +4,16 @@
  *  
  */
 
+#include <Adafruit_MotorShield.h>
+
+//MOTORS
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+
+Adafruit_DCMotor *M1 = AFMS.getMotor(1);
+Adafruit_DCMotor *M2 = AFMS.getMotor(2);
+Adafruit_DCMotor *M3 = AFMS.getMotor(3);
+Adafruit_DCMotor *M4 = AFMS.getMotor(4);
+
 //CONSTANTS
 //PINS
 #define S0 31
@@ -11,13 +21,15 @@
 #define S2 35
 #define S3 37
 #define sensorOut 39
+//MOTOR CONSTANTS
+#define MOVE_SPEED 100
 
 //COLOR MAPPING
 #define R_MAP_LOW 7
 #define G_MAP_LOW 13
 #define B_MAP_LOW 9
 
-#define R_MAP_HIGH 37
+#define R_MAP_HIGH 40
 #define G_MAP_HIGH 58
 #define B_MAP_HIGH 50
 
@@ -49,8 +61,27 @@
 
 //GLOBALS
 int frequency = 0;
-bool displayingFreq = true;
+bool displayingFreq = false;
+bool displayingRGB = false;
+bool movingForward = true;
 
+enum Color {
+  RED,
+  GREEN,
+  ERR //error value meant to be selected when previous enumerations do not work.
+};
+
+//function prototypes
+long getRedRGB();
+long getGreenRGB();
+long getBlueRGB();
+Color getColor(long r, long g, long b);
+void moveForward();
+void moveBackward();
+void switchDirection();
+void waitASecond();
+
+//---------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
   Serial.println("Beggining setup...");
   pinMode(S0, OUTPUT);
@@ -62,12 +93,37 @@ void setup() {
   // Setting frequency-scaling to 20%
   digitalWrite(S0,HIGH);
   digitalWrite(S1,HIGH);
+
+  AFMS.begin();
   
   Serial.begin(9600);
+  moveForward(); //initial movement
 }
-void loop() {
 
-  //------------------------------------------------- RED -------------------------------------------
+void loop() {
+  long redrgb = getRedRGB();
+  long greenrgb = getGreenRGB();
+  long bluergb = getBlueRGB();
+  
+  Color color = getColor(redrgb, greenrgb, bluergb);
+
+  if (color == RED) {
+    Serial.println("Red");
+    switchDirections();
+  } 
+  else if (color == GREEN) {
+    Serial.println("Green"); 
+    waitASecond(); 
+  }
+  else {
+    Serial.println("ERR");
+  }
+
+  delay(1000);
+}
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+long getRedRGB(){
   // Setting red filtered photodiodes to be read
   digitalWrite(S2,LOW);
   digitalWrite(S3,LOW);
@@ -78,9 +134,11 @@ void loop() {
     Serial.print ("RF : ");
     Serial.println(frequency);
   }
-  long redrgb = map(frequency, R_MAP_LOW,R_MAP_HIGH,255,0);
+  
+  return map(frequency, R_MAP_LOW,R_MAP_HIGH,255,0);
+}
 
-  // ----------------------------------------------- GREEN -------------------------------------------
+long getGreenRGB () {
   // Setting Green filtered photodiodes to be read
   digitalWrite(S2,HIGH);
   digitalWrite(S3,HIGH);
@@ -91,10 +149,11 @@ void loop() {
     Serial.print ("GF : ");
     Serial.println(frequency);
   }
-  long greenrgb = map(frequency, G_MAP_LOW,G_MAP_HIGH,255,0);
-  
 
-  // ------------------------------------------------ BLUE -------------------------------------------
+  return map(frequency, G_MAP_LOW,G_MAP_HIGH,255,0);  
+}
+
+long getBlueRGB() {
   // Setting Blue filtered photodiodes to be read
   digitalWrite(S2,LOW);
   digitalWrite(S3,HIGH);
@@ -105,15 +164,79 @@ void loop() {
     Serial.print ("BF : ");
     Serial.println(frequency);
   }
-  long bluergb = map(frequency, B_MAP_LOW,B_MAP_HIGH,255,0);
   
-  //PRINT
-  Serial.print("RGB Values: ");
-  Serial.print(redrgb);
-  Serial.print(", ");
-  Serial.print(greenrgb);
-  Serial.print(", ");
-  Serial.println(bluergb);
+  return map(frequency, B_MAP_LOW,B_MAP_HIGH,255,0);
+}
 
-  delay(1000);
+Color getColor(long r, long g, long b){
+  Color output;
+
+  if(displayingRGB) {
+    Serial.print(r);
+    Serial.print(", ");
+    Serial.print(g);
+    Serial.print(", ");
+    Serial.println(b);
+  }
+  
+  if (r > 100 && (g < 100 && b < 100)){
+      output = RED;
+  }
+  else if (g > 100 && (r < 100 && b < 100)) {
+    output = GREEN;
+  }
+  else {
+    output = ERR;
+  }
+  
+  return output;
+}
+
+void moveForward() {
+  M1->setSpeed(MOVE_SPEED);
+  M2->setSpeed(MOVE_SPEED);
+  M3->setSpeed(MOVE_SPEED);
+  M4->setSpeed(MOVE_SPEED);
+
+  M1->run(FORWARD);
+  M2->run(FORWARD);
+  M3->run(FORWARD);
+  M4->run(FORWARD);
+}
+
+void moveBackward(){
+  M1->setSpeed(MOVE_SPEED);
+  M2->setSpeed(MOVE_SPEED);
+  M3->setSpeed(MOVE_SPEED);
+  M4->setSpeed(MOVE_SPEED);
+
+  M1->run(BACKWARD);
+  M2->run(BACKWARD);
+  M3->run(BACKWARD);
+  M4->run(BACKWARD);
+}
+
+void switchDirections() {
+  if (movingForward){
+    moveBackward();
+  } else {
+    moveForward();
+  }
+
+  movingForward = !movingForward; //flip flag to tell the logic which way to go.
+  
+}
+
+void waitASecond() {
+  M1->setSpeed(0);
+  M2->setSpeed(0);
+  M3->setSpeed(0);
+  M4->setSpeed(0);
+
+  delay (1000);
+
+  M1->setSpeed(MOVE_SPEED);
+  M2->setSpeed(MOVE_SPEED);
+  M3->setSpeed(MOVE_SPEED);
+  M4->setSpeed(MOVE_SPEED);
 }
