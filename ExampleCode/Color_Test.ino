@@ -83,6 +83,7 @@ void moveForward();
 void moveBackward();
 void switchDirection();
 void waitASecond();
+void dispatch(Color_Enum reading);
 
 //color list instantiation
 struct color {
@@ -140,7 +141,13 @@ void loop() {
   
   Color_Enum color = getColor(redrgb, greenrgb, bluergb);
 
+  dispatch(color);
 
+  delay(1000);
+}
+//---------------------------------------------------------------------------------------------------------------------------------------
+
+void dispatch(Color_Enum color){
   if (color == RED) {
     Serial.println("Red");
     switchDirections();
@@ -152,10 +159,7 @@ void loop() {
   else {
     Serial.println("ERR");
   }
-
-  delay(1000);
 }
-//---------------------------------------------------------------------------------------------------------------------------------------
 
 long getRedRGB(){
   // Setting red filtered photodiodes to be read
@@ -279,4 +283,3 @@ void waitASecond() {
   M3->setSpeed(MOVE_SPEED);
   M4->setSpeed(MOVE_SPEED);
 }
-
