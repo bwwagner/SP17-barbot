@@ -8,5 +8,4 @@
 |Pololu QTR-8RC Reflectance Sensor Array | 9.95  
 |Plywood | 5.00  
 |Metal bracketing and mounting | 14.00  
-
 |Total | 391.74  
