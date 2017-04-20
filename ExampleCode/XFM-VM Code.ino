@@ -1,5 +1,11 @@
-/*     Arduino Color Sensing Tutorial
- *      
+/*     
+ *  XFM-VM Source code
+ *  Program that executes on the Arduino controller
+ *  to perform item delivery.
+ *  v 1.0
+ *  
+ *  Includes code from
+ *  Arduino Color Sensing Tutorial      
  *  by Dejan Nedelkovski, www.HowToMechatronics.com
  *  
  */
