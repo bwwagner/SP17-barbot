@@ -109,7 +109,7 @@ color * colorList = new color[NUM_SUPPORTED_COLORS];
 
 //---------------------------------------------------------------------------------------------------------------------------------------
 void setup() {
-  Serial.println("Beggining setup...");
+  Serial.println("Beginning setup...");
 
   color red = color(220, 30, 60, "RED");
   color green = color(110, 170, 90, "GREEN");
