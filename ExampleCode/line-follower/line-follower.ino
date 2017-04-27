@@ -13,12 +13,12 @@ Adafruit_DCMotor *myMotor2 = AFMS.getMotor(2);
 Adafruit_DCMotor *myMotor3 = AFMS.getMotor(3);
 Adafruit_DCMotor *myMotor4 = AFMS.getMotor(4);
   
-#define KP 0.05 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
-#define KD 3 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
-#define M1_minumum_speed 60  //minimum speed of the Motor1
-#define M2_minumum_speed 60  //minimum speed of the Motor2
-#define M1_maksimum_speed 80 //max. speed of the Motor1
-#define M2_maksimum_speed 80 //max. speed of the Motor2
+#define KP 0.005 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define KD 0.0060 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define M1_minumum_speed 85  //minimum speed of the Motor1
+#define M2_minumum_speed 85  //minimum speed of the Motor2
+#define M1_maksimum_speed 120 //max. speed of the Motor1
+#define M2_maksimum_speed 120 //max. speed of the Motor2
 #define MIDDLE_SENSOR 4       //number of middle sensor used
 #define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
@@ -52,7 +52,7 @@ void loop()
 //  unsigned int sensors[NUM_SENSORS];
   int position = qtrrc.readLine(sensorValues); //get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
   Serial.println(position);
-//  delay(1000);
+  delay(10);
 
   qtrrc.read(sensorValues);
   
@@ -67,7 +67,7 @@ void loop()
 //  
 //  delay(250);
 
-  int error = position - 3850;
+  int error = position - 3500;
 //  Serial.print("Error: ");
 //  Serial.println(error);
   
@@ -83,9 +83,10 @@ void loop()
   Serial.print(" Right: ");
   Serial.println(rightMotorSpeed);
 //  delay(1000);
-  
+  //if(motorSpeed > 10 || motorSpeed < -10){
   // set motor speeds using the two motor speed variables above
     set_motors(leftMotorSpeed, rightMotorSpeed);
+  //}
 }
   
 void set_motors(int leftMotorSpeed, int rightMotorSpeed)
