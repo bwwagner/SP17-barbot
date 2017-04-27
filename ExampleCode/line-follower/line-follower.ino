@@ -13,19 +13,19 @@ Adafruit_DCMotor *myMotor2 = AFMS.getMotor(2);
 Adafruit_DCMotor *myMotor3 = AFMS.getMotor(3);
 Adafruit_DCMotor *myMotor4 = AFMS.getMotor(4);
   
-#define KP 0.5 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define KP 0.05 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
 #define KD 3 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
 #define M1_minumum_speed 60  //minimum speed of the Motor1
 #define M2_minumum_speed 60  //minimum speed of the Motor2
-#define M1_maksimum_speed 150 //max. speed of the Motor1
-#define M2_maksimum_speed 150 //max. speed of the Motor2
+#define M1_maksimum_speed 80 //max. speed of the Motor1
+#define M2_maksimum_speed 80 //max. speed of the Motor2
 #define MIDDLE_SENSOR 4       //number of middle sensor used
-#define NUM_SENSORS   4     // number of sensors used
+#define NUM_SENSORS   8     // number of sensors used
 #define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
-#define EMITTER_PIN   QTR_NO_EMITTER_PIN     // emitter is controlled by digital pin 2
+#define EMITTER_PIN   24     // emitter is controlled by digital pin 2
 
 // sensors 0 through 7 are connected to digital pins 3 through 10, respectively
-QTRSensorsRC qtrrc((unsigned char[]) {15, 16, 17, 18},
+QTRSensorsRC qtrrc((unsigned char[]) {26, 28, 30, 32, 34, 36, 38, 40},
   NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 unsigned int sensorValues[NUM_SENSORS];
   
@@ -39,7 +39,7 @@ void setup()
 
 //delay(1500);
 manual_calibration();
-//  qtrrc.calibrate(QTR_EMITTERS_OFF);
+//  qtrrc.calibrate(QTR_EMITTERS_ON);
 //set_motors(0,0);
 }
   
@@ -67,9 +67,9 @@ void loop()
 //  
 //  delay(250);
 
-  int error = position - 1420;
-  Serial.print("Error: ");
-  Serial.println(error);
+  int error = position - 3850;
+//  Serial.print("Error: ");
+//  Serial.println(error);
   
   int motorSpeed = KP * error + KD * (error - lastError);
   lastError = error;
@@ -78,28 +78,28 @@ void loop()
   int leftMotorSpeed = M1_minumum_speed + motorSpeed;
   int rightMotorSpeed = M2_minumum_speed - motorSpeed;
 
-//  Serial.print("Left: ");
-//  Serial.print(leftMotorSpeed);
-//  Serial.print(" Right: ");
-//  Serial.println(rightMotorSpeed);
+  Serial.print("Left: ");
+  Serial.print(leftMotorSpeed);
+  Serial.print(" Right: ");
+  Serial.println(rightMotorSpeed);
 //  delay(1000);
   
   // set motor speeds using the two motor speed variables above
     set_motors(leftMotorSpeed, rightMotorSpeed);
 }
   
-void set_motors(int motor1speed, int motor2speed)
+void set_motors(int leftMotorSpeed, int rightMotorSpeed)
 {
-if (motor1speed > M1_maksimum_speed ) motor1speed = M1_maksimum_speed;
-if (motor2speed > M2_maksimum_speed ) motor2speed = M2_maksimum_speed;
-if (motor1speed < 0) motor1speed = 0; 
-if (motor2speed < 0) motor2speed = 0; 
-myMotor1->setSpeed(motor1speed); 
-myMotor2->setSpeed(motor2speed);
+if (leftMotorSpeed > M1_maksimum_speed ) leftMotorSpeed = M1_maksimum_speed;
+if (rightMotorSpeed > M2_maksimum_speed ) rightMotorSpeed = M2_maksimum_speed;
+if (leftMotorSpeed < 0) leftMotorSpeed = 0; 
+if (rightMotorSpeed < 0) rightMotorSpeed = 0; 
+myMotor1->setSpeed(rightMotorSpeed); 
+myMotor2->setSpeed(leftMotorSpeed);
 myMotor1->run(FORWARD); 
 myMotor2->run(FORWARD);
-myMotor3->setSpeed(motor1speed); 
-myMotor4->setSpeed(motor2speed);
+myMotor3->setSpeed(leftMotorSpeed); 
+myMotor4->setSpeed(rightMotorSpeed);
 myMotor3->run(FORWARD); 
 myMotor4->run(FORWARD);
 }
@@ -110,7 +110,7 @@ void manual_calibration() {
 int i;
 for (i = 0; i < 50; i++)
 {
-qtrrc.calibrate(QTR_EMITTERS_OFF);
+qtrrc.calibrate(QTR_EMITTERS_ON);
 delay(20);
 }
   
