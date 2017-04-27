@@ -2,7 +2,7 @@
  *  XFM-VM Source code
  *  Program that executes on the Arduino controller
  *  to perform item delivery.
- *  v 1.0
+ *  v 1.1
  *  
  *  Includes code from
  *  Arduino Color Sensing Tutorial      
@@ -157,12 +157,16 @@ void loop() {
 //---------------------------------------------------------------------------------------------------------------------------------------
 
 void dispatch(Color_Enum color){
+  int count = 0; // count of orders delivered on this pass
   if (color == RED) {
     Serial.println("Red");
+	Serial.println(count);
+	count = 0;
     switchDirections();
   } 
   else if (color == GREEN) {
-    Serial.println("Green"); 
+    Serial.println("Green");
+	count++;
     unloadMint(); 
   }
   else if (color == BLUE) {
