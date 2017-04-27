@@ -135,7 +135,7 @@ void dropMint();
 //=======================================================================================================================================
 void setup() {
   Serial.begin(9600);
-  Serial.println("Beggining setup...");
+  Serial.println("Beginning setup...");
 
   color red = color(213, 60, 47, "RED");
   color green = color(89, 173, 69, "GREEN");
