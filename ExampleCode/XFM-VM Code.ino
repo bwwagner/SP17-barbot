@@ -12,26 +12,12 @@
  
 //INCLUDES
 #include <Wire.h>
+#include <QTRSensors.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include <Braccio.h>
 #include <Servo.h>
 #include <math.h>
-
-//MOTORS
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-//WHEELS
-Adafruit_DCMotor *M1 = AFMS.getMotor(1);
-Adafruit_DCMotor *M2 = AFMS.getMotor(2);
-Adafruit_DCMotor *M3 = AFMS.getMotor(3);
-Adafruit_DCMotor *M4 = AFMS.getMotor(4);
-//BRACCIO ARM
-Servo base;
-Servo shoulder;
-Servo elbow;
-Servo wrist_rot;
-Servo wrist_ver;
-Servo gripper;
 
 //CONSTANTS
 //PINS
@@ -42,6 +28,17 @@ Servo gripper;
 #define sensorOut 39
 //MOTOR CONSTANTS
 #define MOVE_SPEED 100
+//QTR LINE FOLLOWER CONSTANTS
+#define KP 0.005 //experiment to determine this, start by something small that just makes your bot follow the line at a slow speed
+#define KD 0.0060 //experiment to determine this, slowly increase the speeds and adjust this value. ( Note: Kp < Kd) 
+#define M1_minumum_speed 85  //minimum speed of the Motor1
+#define M2_minumum_speed 85  //minimum speed of the Motor2
+#define M1_maksimum_speed 120 //max. speed of the Motor1
+#define M2_maksimum_speed 120 //max. speed of the Motor2
+#define MIDDLE_SENSOR 4       //number of middle sensor used
+#define NUM_SENSORS   8     // number of sensors used
+#define TIMEOUT       2500  // waits for 2500 microseconds for sensor outputs to go low
+#define EMITTER_PIN 24 // emitter is controlled by digital pin 24
 
 //COLOR MAPPING
 #define R_MAP_LOW 7
@@ -104,38 +101,69 @@ struct color {
   
 };
 
+//MOTORS
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+//WHEELS
+Adafruit_DCMotor *M1 = AFMS.getMotor(1);
+Adafruit_DCMotor *M2 = AFMS.getMotor(2);
+Adafruit_DCMotor *M3 = AFMS.getMotor(3);
+Adafruit_DCMotor *M4 = AFMS.getMotor(4);
+//BRACCIO ARM
+Servo base;
+Servo shoulder;
+Servo elbow;
+Servo wrist_rot;
+Servo wrist_ver;
+Servo gripper;
+//LINE FOLLOWER
+QTRSensorsRC qtrrc((unsigned char[]) {26, 28, 30, 32, 34, 36, 38, 40}, NUM_SENSORS, TIMEOUT, EMITTER_PIN);
+
 //GLOBALS
 //DATA FLAGS
 bool displayingFreq = false;
 bool displayingRGB = false;
 
 //GLOBAL OPERATION
-int frequency = 0;
 bool movingForward = true;
+//COLOR SENSOR
+int frequency = 0;
 color * colorList = new color[NUM_SUPPORTED_COLORS];
 Color_Enum lastColor = 2; //set to blue for reasons.
+unsigned int sensorValues[NUM_SENSORS];
+//LINE FOLLOWER
+int lastError = 0;
+int last_proportional = 0;
+int integral = 0;
+//LOOP
+unsigned int startTime;
 
 //PERFORMANCE METRICS
 long deliveryCount;
 long greenReadCount;
 
 //function prototypes
+void manual_calibration();
 long getRedRGB();
 long getGreenRGB();
 long getBlueRGB();
 Color_Enum getColor(long r, long g, long b);
 void moveForward();
+void set_motors(int leftMotorSpeed, int rightMotorSpeed);
 void moveBackward();
 void switchDirection();
 void waitASecond();
 void dispatch(Color_Enum reading);
 void dropMint();
+int getError();
 //=======================================================================================================================================
 //---------------------------------------------------------------------------------------------------------------------------------------
 //=======================================================================================================================================
 void setup() {
   Serial.begin(9600);
-  Serial.println("Beginning setup...");
+  Serial.println("Beginning setup.");
+  
+  manual_calibration();
+  Serial.print(".");
 
   color red = color(213, 60, 47, "RED");
   color green = color(89, 173, 69, "GREEN");
@@ -151,6 +179,8 @@ void setup() {
 
   deliveryCount = 0;
   greenReadCount = 0;
+  startTime = millis();
+  Serial.print(".");
   
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -177,20 +207,38 @@ void setup() {
   moveForward(); //initial movement
 }
 
-void loop() {  
+void loop() {
+  unsigned int currentTime = millis();
+  
   long redrgb = getRedRGB();
   long greenrgb = getGreenRGB();
   long bluergb = getBlueRGB();
-  
-  Color_Enum color = getColor(redrgb, greenrgb, bluergb);
 
-  dispatch(color);
+  if (currentTime - startTime >= 100){
+    Color_Enum color = getColor(redrgb, greenrgb, bluergb);
+    dispatch(color);
+    startTime = currentTime;
+  }
 
-  delay(100);
+  if (movingForward) {
+    moveForward();
+  } else {
+    moveBackward();
+  }
 }
 //=======================================================================================================================================
 //---------------------------------------------------------------------------------------------------------------------------------------
 //=======================================================================================================================================
+void manual_calibration() {
+  int i;
+  
+  for (i = 0; i < 50; i++)
+  {
+    qtrrc.calibrate(QTR_EMITTERS_ON);
+    delay(20);
+  }
+}
+
 long getRedRGB(){
   // Setting red filtered photodiodes to be read
   digitalWrite(S2,LOW);
@@ -303,24 +351,32 @@ Color_Enum getColor(long r, long g, long b){
 }
 
 void switchDirections() {
-  if (movingForward){
-    moveBackward();
-  } else {
-    moveForward();
-  }
-
   movingForward = !movingForward; //flip flag to tell the logic which way to go.
 }
 
 void moveForward() {
-  M1->setSpeed(MOVE_SPEED);
-  M2->setSpeed(MOVE_SPEED);
-  M3->setSpeed(MOVE_SPEED);
-  M4->setSpeed(MOVE_SPEED);
+  int error = getError();
 
-  M1->run(FORWARD);
+  int motorSpeed = KP * error + KD * (error - lastError);
+  lastError = error;
+  
+  int leftMotorSpeed = M1_minumum_speed + motorSpeed;
+  int rightMotorSpeed = M2_minumum_speed - motorSpeed;
+  set_motors(leftMotorSpeed, rightMotorSpeed);
+}
+
+void set_motors(int leftMotorSpeed, int rightMotorSpeed){
+  if (leftMotorSpeed > M1_maksimum_speed ) leftMotorSpeed = M1_maksimum_speed;
+  if (rightMotorSpeed > M2_maksimum_speed ) rightMotorSpeed = M2_maksimum_speed;
+  if (leftMotorSpeed < 0) leftMotorSpeed = 0; 
+  if (rightMotorSpeed < 0) rightMotorSpeed = 0; 
+  M1->setSpeed(rightMotorSpeed); 
+  M2->setSpeed(leftMotorSpeed);
+  M1->run(FORWARD); 
   M2->run(FORWARD);
-  M3->run(FORWARD);
+  M3->setSpeed(leftMotorSpeed); 
+  M4->setSpeed(rightMotorSpeed);
+  M3->run(FORWARD); 
   M4->run(FORWARD);
 }
 
@@ -379,5 +435,13 @@ void dropMint(){
     //Open the gripper
     Braccio.ServoMovement(20,         180,   140, 145,  180,  90, 10 );
     Braccio.ServoMovement(20,         180,   100, 145,  180,  90, 10 );
+}
+
+int getError(){
+  int position = qtrrc.readLine(sensorValues); //get calibrated readings along with the line position, refer to the QTR Sensors Arduino Library for more details on line position.
+  Serial.println(position);
+  delay(10);
+
+  return position - 3500;
 }
 
