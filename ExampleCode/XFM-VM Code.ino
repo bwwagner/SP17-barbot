@@ -9,16 +9,29 @@
  *  by Dejan Nedelkovski, www.HowToMechatronics.com
  *  
  */
-
+ 
+//INCLUDES
+#include <Wire.h>
 #include <Adafruit_MotorShield.h>
+#include "utility/Adafruit_MS_PWMServoDriver.h"
+#include <Braccio.h>
+#include <Servo.h>
+#include <math.h>
 
 //MOTORS
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-
+//WHEELS
 Adafruit_DCMotor *M1 = AFMS.getMotor(1);
 Adafruit_DCMotor *M2 = AFMS.getMotor(2);
 Adafruit_DCMotor *M3 = AFMS.getMotor(3);
 Adafruit_DCMotor *M4 = AFMS.getMotor(4);
+//BRACCIO ARM
+Servo base;
+Servo shoulder;
+Servo elbow;
+Servo wrist_rot;
+Servo wrist_ver;
+Servo gripper;
 
 //CONSTANTS
 //PINS
@@ -67,34 +80,14 @@ Adafruit_DCMotor *M4 = AFMS.getMotor(4);
  * ---------------------------------------------------------------------------------------------------------------------------------------------------------
  */
 
-//GLOBALS
-//DATA FLAGS
-bool displayingFreq = false;
-bool displayingRGB = false;
-
-//GLOBAL OPERATION
-int frequency = 0;
-bool movingForward = true;
-
-enum Color_Enum {
+ //STUCRTURES
+ enum Color_Enum {
   RED = 0,
   GREEN = 1,
   BLUE = 2,
   TABLE = 3 //error value meant to be selected when previous enumerations do not work.
 };
 
-//function prototypes
-long getRedRGB();
-long getGreenRGB();
-long getBlueRGB();
-Color_Enum getColor(long r, long g, long b);
-void moveForward();
-void moveBackward();
-void switchDirection();
-void waitASecond();
-void dispatch(Color_Enum reading);
-
-//color list instantiation
 struct color {
   public:
   int r;
@@ -111,21 +104,53 @@ struct color {
   
 };
 
+//GLOBALS
+//DATA FLAGS
+bool displayingFreq = false;
+bool displayingRGB = false;
+
+//GLOBAL OPERATION
+int frequency = 0;
+bool movingForward = true;
 color * colorList = new color[NUM_SUPPORTED_COLORS];
+Color_Enum lastColor = 2; //set to blue for reasons.
 
+//PERFORMANCE METRICS
+long deliveryCount;
+long greenReadCount;
+
+//function prototypes
+long getRedRGB();
+long getGreenRGB();
+long getBlueRGB();
+Color_Enum getColor(long r, long g, long b);
+void moveForward();
+void moveBackward();
+void switchDirection();
+void waitASecond();
+void dispatch(Color_Enum reading);
+void dropMint();
+//=======================================================================================================================================
 //---------------------------------------------------------------------------------------------------------------------------------------
+//=======================================================================================================================================
 void setup() {
-  Serial.println("Beginning setup...");
+  Serial.begin(9600);
+  Serial.println("Beggining setup...");
 
-  color red = color(220, 30, 60, "RED");
-  color green = color(110, 170, 90, "GREEN");
-  color blue = color(80, 150, 185, "BLUE");
-  color table = color(200, 190, 180, "TABLE");
+  color red = color(213, 60, 47, "RED");
+  color green = color(89, 173, 69, "GREEN");
+  color blue = color(66, 173, 184, "BLUE");
+  color table = color(201, 216, 184, "TABLE");
+  Serial.print(".");
   
   colorList[0] = red;
   colorList[1] = green;
   colorList[2] = blue;
   colorList[3] = table;
+  Serial.print(".");
+
+  deliveryCount = 0;
+  greenReadCount = 0;
   
   pinMode(S0, OUTPUT);
   pinMode(S1, OUTPUT);
@@ -136,10 +161,19 @@ void setup() {
   // Setting frequency-scaling to 20%
   digitalWrite(S0,HIGH);
   digitalWrite(S1,HIGH);
-
-  AFMS.begin();
+  Serial.print(".");
   
-  Serial.begin(9600);
+  Braccio.begin();
+  Braccio.ServoMovement(20,         135,   45, 180,  45,  0, 73);
+  Braccio.ServoMovement(20, 180, 45, 180, 45, 180, 73);
+  Serial.print(".");
+  
+  AFMS.begin();
+  Serial.println(".");
+  
+  delay(100);
+  Serial.println("Setup complete!");
+  
   moveForward(); //initial movement
 }
 
@@ -152,31 +186,11 @@ void loop() {
 
   dispatch(color);
 
-  delay(1000);
+  delay(100);
 }
+//=======================================================================================================================================
 //---------------------------------------------------------------------------------------------------------------------------------------
-
-void dispatch(Color_Enum color){
-  int count = 0; // count of orders delivered on this pass
-  if (color == RED) {
-    Serial.println("Red");
-	Serial.println(count);
-	count = 0;
-    switchDirections();
-  } 
-  else if (color == GREEN) {
-    Serial.println("Green");
-	count++;
-    unloadMint(); 
-  }
-  else if (color == BLUE) {
-    Serial.println("Blue");
-  }
-  else {
-    Serial.println("Table");
-  }
-}
-
+//=======================================================================================================================================
 long getRedRGB(){
   // Setting red filtered photodiodes to be read
   digitalWrite(S2,LOW);
@@ -222,8 +236,45 @@ long getBlueRGB() {
   return map(frequency, B_MAP_LOW,B_MAP_HIGH,255,0);
 }
 
+void dispatch(Color_Enum color){
+  if (color == RED) {
+    greenReadCount = 0;
+    deliveryCount = 0;
+    if (lastColor != RED){
+      Serial.println("Red");
+      switchDirections();
+      lastColor = RED;
+    }
+  } 
+  else if (color == GREEN) {
+    greenReadCount++;
+    if (lastColor != GREEN) {
+      deliveryCount++;
+      Serial.println("Green");
+      unloadMint(); 
+      lastColor = GREEN;
+    }
+  }
+  else if (color == BLUE) {
+    Serial.println("Blue");
+    lastColor = BLUE;
+  }
+  else {
+    Serial.println("Table");
+    lastColor = TABLE;
+  }
+}//end dispatch
+
 Color_Enum getColor(long r, long g, long b){
   Color_Enum output;
+
+  if (displayingRGB) {
+    Serial.print(r);
+    Serial.print(", ");
+    Serial.print(g);
+    Serial.print(", ");
+    Serial.println(b);
+  }
 
   String color;
   int closestColor = 4;
@@ -251,6 +302,16 @@ Color_Enum getColor(long r, long g, long b){
   return output;
 }
 
+void switchDirections() {
+  if (movingForward){
+    moveBackward();
+  } else {
+    moveForward();
+  }
+
+  movingForward = !movingForward; //flip flag to tell the logic which way to go.
+}
+
 void moveForward() {
   M1->setSpeed(MOVE_SPEED);
   M2->setSpeed(MOVE_SPEED);
@@ -275,28 +336,48 @@ void moveBackward(){
   M4->run(BACKWARD);
 }
 
-void switchDirections() {
-  if (movingForward){
-    moveBackward();
-  } else {
-    moveForward();
-  }
-
-  movingForward = !movingForward; //flip flag to tell the logic which way to go.
-}
-
 void unloadMint() {
   M1->setSpeed(0);
   M2->setSpeed(0);
   M3->setSpeed(0);
   M4->setSpeed(0);
 
-  delay (1000);//this is where we will use thearm logic to deliver our mint from the robot.
+  dropMint();//this is where we will use thearm logic to deliver our mint from the robot.
 
   //continue on our path.
   M1->setSpeed(MOVE_SPEED);
   M2->setSpeed(MOVE_SPEED);
   M3->setSpeed(MOVE_SPEED);
   M4->setSpeed(MOVE_SPEED);
+}
+
+void dropMint(){
+  delay(500);
+    //Starting position
+                      //(step delay  M1 , M2 , M3 , M4 , M5 , M6);
+    Braccio.ServoMovement(20,           128,  45, 180, 180,  180,  10);
+  
+    //Wait 1 second
+    delay(1000);
+
+    //The braccio moves to the sponge. Only the M2 servo will moves
+    Braccio.ServoMovement(20,           128,  78, 180, 180,  180,   10);
+
+    //Close the gripper to take the sponge. Only the M6 servo will moves
+    Braccio.ServoMovement(10,           128,  78, 180, 180,  180,  70 );//166
+    Braccio.ServoMovement(10,           128,  45, 180, 180,  180,  70 );//166
+
+    //Brings the sponge upwards.
+    Braccio.ServoMovement(20,         180,   45, 180,  45,  180, 73);
+
+    //Show the sponge. Only the M1 servo will moves
+    Braccio.ServoMovement(20,         180,  45, 180,   45,   90,  73);
+
+    //Return to the start position.
+    Braccio.ServoMovement(20,         180,   120, 145,  180,  90, 73);
+
+    //Open the gripper
+    Braccio.ServoMovement(20,         180,   140, 145,  180,  90, 10 );
+    Braccio.ServoMovement(20,         180,   100, 145,  180,  90, 10 );
 }
 
