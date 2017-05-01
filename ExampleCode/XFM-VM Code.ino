@@ -49,6 +49,8 @@
 #define G_MAP_HIGH 58
 #define B_MAP_HIGH 50
 
+#define DETECTION_RADIUS 50
+
 //COLOR LIST
 #define NUM_SUPPORTED_COLORS 4
 
@@ -307,9 +309,12 @@ void dispatch(Color_Enum color){
     Serial.println("Blue");
     lastColor = BLUE;
   }
-  else {
+  else if (color == TABLE) {
     Serial.println("Table");
     lastColor = TABLE;
+  }
+  else {
+    Serial.println("ERR");
   }
 }//end dispatch
 
@@ -345,7 +350,12 @@ Color_Enum getColor(long r, long g, long b){
     }  
   }
 
-  output = closestColor;
+  if (minDiff < DETECTION_RADIUS){
+    output = closestColor;
+  }
+  else {
+    output = NUM_SUPPORTED_COLORS + 1;
+  }
     
   return output;
 }
@@ -398,8 +408,9 @@ void unloadMint() {
   M3->setSpeed(0);
   M4->setSpeed(0);
 
-  dropMint();//this is where we will use thearm logic to deliver our mint from the robot.
-
+  //dropMint();//this is where we will use thearm logic to deliver our mint from the robot.
+  delay(1000);
+  
   //continue on our path.
   M1->setSpeed(MOVE_SPEED);
   M2->setSpeed(MOVE_SPEED);
@@ -444,4 +455,3 @@ int getError(){
 
   return position - 3500;
 }
-
