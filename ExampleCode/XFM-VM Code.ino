@@ -408,9 +408,8 @@ void unloadMint() {
   M3->setSpeed(0);
   M4->setSpeed(0);
 
-  //dropMint();//this is where we will use thearm logic to deliver our mint from the robot.
-  delay(1000);
-  
+  dropMint();//this is where we will use thearm logic to deliver our mint from the robot.
+    
   //continue on our path.
   M1->setSpeed(MOVE_SPEED);
   M2->setSpeed(MOVE_SPEED);
