@@ -433,12 +433,6 @@ void dropMint(){
     Braccio.ServoMovement(10,           128,  78, 180, 180,  180,  70 );//166
     Braccio.ServoMovement(10,           128,  45, 180, 180,  180,  70 );//166
 
-    //Brings the sponge upwards.
-    Braccio.ServoMovement(20,         180,   45, 180,  45,  180, 73);
-
-    //Show the sponge. Only the M1 servo will moves
-    Braccio.ServoMovement(20,         180,  45, 180,   45,   90,  73);
-
     //Return to the start position.
     Braccio.ServoMovement(20,         180,   120, 145,  180,  90, 73);
 
