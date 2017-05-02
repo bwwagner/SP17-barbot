@@ -11,13 +11,21 @@
  */
 
 //INCLUDES
-#
-include < Wire.h > #include < QTRSensors.h > #include < Adafruit_MotorShield.h > #include "utility/Adafruit_MS_PWMServoDriver.h"#
-include < Braccio.h > #include < Servo.h > #include < math.h >
+#include < Wire.h > 
+#include < QTRSensors.h > 
+#include < Adafruit_MotorShield.h > 
+#include "utility/Adafruit_MS_PWMServoDriver.h"
+#include < Braccio.h > 
+#include < Servo.h > 
+#include < math.h >
 
   //CONSTANTS
   //PINS
-  #define S0 31# define S1 33# define S2 35# define S3 37# define sensorOut 39
+  #define S0 31
+  # define S1 33
+  # define S2 35
+  # define S3 37
+  # define sensorOut 39
   //MOTOR CONSTANTS
   # define MOVE_SPEED 100
   //QTR LINE FOLLOWER CONSTANTS
