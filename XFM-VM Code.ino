@@ -2,7 +2,7 @@
  *  XFM-VM Source code
  *  Program that executes on the Arduino controller
  *  to perform item delivery.
- *  v 1.1
+ *  v 1.3
  *  
  *  Includes code from
  *  Arduino Color Sensing Tutorial      
@@ -126,7 +126,7 @@ bool displayingFreq = false;
 bool displayingRGB = false;
 
 //GLOBAL OPERATION
-bool movingForward = true;
+bool movingForward;
 //COLOR SENSOR
 int frequency = 0;
 color * colorList = new color[NUM_SUPPORTED_COLORS];
@@ -206,6 +206,7 @@ void setup() {
   delay(100);
   Serial.println("Setup complete!");
   
+  movingForward = true;
   moveForward(); //initial movement
 }
 
