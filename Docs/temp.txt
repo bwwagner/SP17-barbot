@@ -1,0 +1,1 @@
+Our robot’s behavior is a reactive system. It runs a path finding algorithm that depends on a strip of black tape to maintain its path. It move along its path until it senses red, indicating the end of its path. If it senses the color green it stops, and delivers a mint to the users.
